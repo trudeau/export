@@ -36,8 +36,6 @@ final class GraphMLExporter<N, E>
 
     private static final String GRAPHML = "graphml";
 
-    private static final String XMLNS = "xmlns";
-
     private static final String GRAPHML_XMLNS = "http://graphml.graphdrawing.org/xmlns";
 
     private static final String EDGEDEFAULT = "edgedefault";
