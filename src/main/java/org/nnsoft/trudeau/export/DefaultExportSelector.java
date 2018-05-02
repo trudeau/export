@@ -1,7 +1,7 @@
 package org.nnsoft.trudeau.export;
 
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,21 +16,21 @@ package org.nnsoft.trudeau.export;
  *   limitations under the License.
  */
 
-import static org.nnsoft.trudeau.utils.Assertions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
-import org.nnsoft.trudeau.api.Graph;
+import com.google.common.graph.ValueGraph;
 
 /**
  * {@link NamedExportSelector} implementation
  *
- * @param <V> the Graph vertices type.
+ * @param <N> the Graph nodes type.
  * @param <E> the Graph edges type.
  */
-final class DefaultExportSelector<V, E>
-    implements NamedExportSelector<V, E>
+final class DefaultExportSelector<N, E>
+    implements ExportSelector<N, E>
 {
 
-    private final Graph<V, E> graph;
+    private final ValueGraph<N, E> graph;
 
     private String name = null;
 
@@ -38,7 +38,7 @@ final class DefaultExportSelector<V, E>
      * Creates a new instance of export selector for the given graph
      * @param graph the graph
      */
-    public DefaultExportSelector( Graph<V, E> graph )
+    public DefaultExportSelector( ValueGraph<N, E> graph )
     {
         this.graph = graph;
     }
@@ -46,25 +46,25 @@ final class DefaultExportSelector<V, E>
     /**
      * {@inheritDoc}
      */
-    public DotExporter<V, E> usingDotNotation()
+    public DotExporter<N, E> toDotNotation()
     {
-        return new DotExporter<V, E>( graph, name );
+        return new DotExporter<N, E>( graph, name );
     }
 
     /**
      * {@inheritDoc}
      */
-    public GraphMLExporter<V, E> usingGraphMLFormat()
+    public GraphMLExporter<N, E> toGraphMLFormat()
     {
-        return new GraphMLExporter<V, E>( graph, name );
+        return new GraphMLExporter<N, E>( graph, name );
     }
 
     /**
      * {@inheritDoc}
      */
-    public ExportSelector<V, E> withName( String name )
+    public ExportSelector<N, E> withName( String name )
     {
-        this.name = checkNotNull( name, "Graph name cannot be null." );
+        this.name = requireNonNull( name, "Graph name cannot be null." );
         return this;
     }
 

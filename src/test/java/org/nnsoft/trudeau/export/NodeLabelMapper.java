@@ -1,7 +1,7 @@
 package org.nnsoft.trudeau.export;
 
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,22 +16,15 @@ package org.nnsoft.trudeau.export;
  *   limitations under the License.
  */
 
-/**
- * TODO Fill me!
- *
- * @param <V> the Graph vertices type.
- * @param <E> the Graph edges type.
- */
-public interface NamedExportSelector<V, E>
-    extends ExportSelector<V, E>
+import java.util.function.Function;
+
+public final class NodeLabelMapper
+    implements Function<String, String>
 {
 
-    /**
-     * Use the given name when exporting the {@link org.apache.commons.graph.Graph} to a resource.
-     *
-     * @param name the name to identify the {@link org.apache.commons.graph.Graph}
-     * @return the graph export format selector
-     */
-    ExportSelector<V, E> withName( String name );
+    public String apply( String t )
+    {
+        return t;
+    }
 
 }

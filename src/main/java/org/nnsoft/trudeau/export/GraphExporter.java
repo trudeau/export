@@ -1,7 +1,7 @@
 package org.nnsoft.trudeau.export;
 
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@ package org.nnsoft.trudeau.export;
  *   limitations under the License.
  */
 
-import static org.nnsoft.trudeau.utils.Assertions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
-import org.nnsoft.trudeau.api.Graph;
+import com.google.common.graph.Graph;
+import com.google.common.graph.ValueGraph;
 
 public final class GraphExporter
 {
@@ -32,9 +33,25 @@ public final class GraphExporter
      * @param graph the input graph
      * @return an instance of {@link NamedExportSelector}
      */
-    public static <V, E, G extends Graph<V, E>> NamedExportSelector<V, E> export( G graph )
+    public static <N, G extends Graph<N>> ExportSelector<N, ?> export( G graph )
     {
-        graph = checkNotNull( graph, "Null graph can not be exported" );
+        graph = requireNonNull( graph, "Null graph can not be exported" );
+        //return new DefaultExportSelector<N, E>( graph );
+        return null;
+    }
+
+    /**
+     * Export the graph in DOT or GraphML format.
+     *
+     * @param <V> the Graph vertices type
+     * @param <E> the Graph edges type
+     * @param <G> the Graph type
+     * @param graph the input graph
+     * @return an instance of {@link NamedExportSelector}
+     */
+    public static <V, E, G extends ValueGraph<V, E>> ExportSelector<V, E> export( G graph )
+    {
+        graph = requireNonNull( graph, "Null graph can not be exported" );
         return new DefaultExportSelector<V, E>( graph );
     }
 

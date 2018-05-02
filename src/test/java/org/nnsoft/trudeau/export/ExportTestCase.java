@@ -1,7 +1,7 @@
 package org.nnsoft.trudeau.export;
 
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,44 +16,46 @@ package org.nnsoft.trudeau.export;
  *   limitations under the License.
  */
 
-import static org.nnsoft.trudeau.connector.GraphPopulator.populate;
+import static org.nnsoft.trudeau.connector.GraphConnector.on;
 import static org.nnsoft.trudeau.export.GraphExporter.export;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.nnsoft.trudeau.connector.AbstractGraphConnection;
-import org.nnsoft.trudeau.inmemory.UndirectedMutableGraph;
-import org.nnsoft.trudeau.inmemory.labeled.BaseLabeledVertex;
-import org.nnsoft.trudeau.inmemory.labeled.BaseLabeledWeightedEdge;
+import org.nnsoft.trudeau.connector.AbstractValueGraphDescription;
+
+import com.google.common.graph.MutableValueGraph;
+import com.google.common.graph.ValueGraphBuilder;
 
 /**
  * TODO find a way to assert exported graphs
  */
 public class ExportTestCase {
 
-    private UndirectedMutableGraph<BaseLabeledVertex, BaseLabeledWeightedEdge<Double>> actual;
+    private MutableValueGraph<String, BaseLabeledWeightedEdge<Double>> actual;
 
     @Before
     public void setUp()
     {
-        actual =
-        populate( new UndirectedMutableGraph<BaseLabeledVertex, BaseLabeledWeightedEdge<Double>>() )
-        .withConnections( new AbstractGraphConnection<BaseLabeledVertex, BaseLabeledWeightedEdge<Double>>()
+        actual = ValueGraphBuilder.undirected().build();
+
+        on( actual )
+        .createConnections( new AbstractValueGraphDescription<String, BaseLabeledWeightedEdge<Double>>()
         {
 
-            public void connect()
+            @Override
+            public void describe()
             {
-                BaseLabeledVertex start = addVertex( new BaseLabeledVertex( "start" ) );
-                BaseLabeledVertex a = addVertex( new BaseLabeledVertex( "a" ) );
-                BaseLabeledVertex b = addVertex( new BaseLabeledVertex( "b" ) );
-                BaseLabeledVertex goal = addVertex( new BaseLabeledVertex( "goal" ) );
+                String start = addNode( "start" );
+                String a = addNode( "a" );
+                String b = addNode( "b" );
+                String goal = addNode( "goal" );
 
-                addEdge( new BaseLabeledWeightedEdge<Double>( "start <-> a", 1.5D ) ).from(start).to( a );
-                addEdge( new BaseLabeledWeightedEdge<Double>( "a <-> b", 2D ) ).from(a).to( b );
-                addEdge( new BaseLabeledWeightedEdge<Double>( "a <-> goal", 2D ) ).from(a).to( goal );
-                addEdge( new BaseLabeledWeightedEdge<Double>( "b <-> goal", 2D ) ).from( b ).to( goal );
+                connect(start).to( a ).via( new BaseLabeledWeightedEdge<Double>( "start <-> a", 1.5D ) );
+                connect(a).to( b ).via( new BaseLabeledWeightedEdge<Double>( "a <-> b", 2D ) );
+                connect(a).to( goal ).via( new BaseLabeledWeightedEdge<Double>( "a <-> goal", 2D ) );
+                connect( b ).to( goal ).via( new BaseLabeledWeightedEdge<Double>( "b <-> goal", 2D ) );
             }
 
         } );
@@ -70,8 +72,8 @@ public class ExportTestCase {
         throws Exception
     {
         export( actual ).withName( "DotFormatGraph" )
-                        .usingDotNotation()
-                        .withVertexLabels( new VertexLabelMapper() )
+                        .toDotNotation()
+                        .withVertexLabels( new NodeLabelMapper() )
                         .withEdgeWeights( new EdgeWeightMapper() )
                         .withEdgeLabels( new EdgeLabelMapper() )
                         .to( System.out );
@@ -83,8 +85,8 @@ public class ExportTestCase {
         throws Exception
     {
         export( actual ).withName( "GraphMLGraph" )
-                        .usingGraphMLFormat()
-                        .withVertexLabels( new VertexLabelMapper() )
+                        .toGraphMLFormat()
+                        .withVertexLabels( new NodeLabelMapper() )
                         .withEdgeWeights( new EdgeWeightMapper() )
                         .withEdgeLabels( new EdgeLabelMapper() )
                         .to( System.out );
@@ -94,7 +96,7 @@ public class ExportTestCase {
     public void shouldPrintGraphMLFormat()
         throws Exception
     {
-        export( actual ).usingGraphMLFormat().to( System.out );
+        export( actual ).toGraphMLFormat().to( System.out );
     }
 
 }

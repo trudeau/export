@@ -1,7 +1,7 @@
 package org.nnsoft.trudeau.export;
 
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package org.nnsoft.trudeau.export;
  */
 
 import static java.lang.String.format;
-import static org.nnsoft.trudeau.utils.Assertions.checkNotNull;
+import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,32 +30,34 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 
-import org.nnsoft.trudeau.api.Graph;
-import org.nnsoft.trudeau.api.Mapper;
-import org.nnsoft.trudeau.api.VertexPair;
+import com.google.common.graph.EndpointPair;
+import com.google.common.graph.ValueGraph;
 
-abstract class AbstractExporter<V, E, T extends AbstractExporter<V, E, T>>
+abstract class AbstractExporter<N, E, T extends AbstractExporter<N, E, T>>
 {
 
     private static final String G = "G";
 
-    private final Graph<V, E> graph;
+    private final ValueGraph<N, E> graph;
 
-    private final Map<String, Mapper<V, ?>> vertexProperties;
+    private final Map<String, Function<N, ?>> nodeProperties;
 
-    private final Map<String, Mapper<E, ?>> edgeProperties;
+    private final Map<String, Function<E, ?>> edgeProperties;
 
     private final String name;
 
     private Writer writer;
 
-    public AbstractExporter( Graph<V, E> graph, String name )
+    public AbstractExporter( ValueGraph<N, E> graph, String name )
     {
         this.graph = graph;
         this.writer = null;
-        this.vertexProperties = new HashMap<String, Mapper<V, ?>>();
-        this.edgeProperties = new HashMap<String, Mapper<E, ?>>();
+        this.nodeProperties = new HashMap<String, Function<N, ?>>();
+        this.edgeProperties = new HashMap<String, Function<E, ?>>();
         this.name = name != null ? name : G;
     }
 
@@ -64,7 +66,7 @@ abstract class AbstractExporter<V, E, T extends AbstractExporter<V, E, T>>
     {
         try
         {
-            to( new FileOutputStream( checkNotNull( outputFile, "Impossibe to export the graph in a null file" ) ) );
+            to( new FileOutputStream( requireNonNull( outputFile, "Impossibe to export the graph in a null file" ) ) );
         }
         catch ( FileNotFoundException e )
         {
@@ -75,13 +77,13 @@ abstract class AbstractExporter<V, E, T extends AbstractExporter<V, E, T>>
     public final void to( OutputStream outputStream )
         throws GraphExportException
     {
-        to( new OutputStreamWriter( checkNotNull( outputStream, "Impossibe to export the graph in a null stream" ) ) );
+        to( new OutputStreamWriter( requireNonNull( outputStream, "Impossibe to export the graph in a null stream" ) ) );
     }
 
     public final void to( Writer writer )
         throws GraphExportException
     {
-        this.writer = checkNotNull( writer, "Impossibe to export the graph in a null stream" );
+        this.writer = requireNonNull( writer, "Impossibe to export the graph in a null stream" );
 
         try
         {
@@ -96,32 +98,39 @@ abstract class AbstractExporter<V, E, T extends AbstractExporter<V, E, T>>
 
             // END
 
-            for ( V vertex : graph.getVertices() )
+            for ( N node : graph.nodes() )
             {
-                Map<String, Object> properties = new HashMap<String, Object>( vertexProperties.size() );
+                Map<String, Object> properties = new HashMap<String, Object>( nodeProperties.size() );
 
-                for ( Entry<String, Mapper<V, ?>> vertexProperty : vertexProperties.entrySet() )
+                for ( Entry<String, Function<N, ?>> vertexProperty : nodeProperties.entrySet() )
                 {
                     properties.put( vertexProperty.getKey(),
-                                    vertexProperty.getValue().map( vertex ) );
+                                    vertexProperty.getValue().apply( node ) );
                 }
 
-                vertex( vertex, properties );
+                vertex( node, properties );
             }
 
-            for ( E edge : graph.getEdges() )
+            Set<EndpointPair<N>> edges = graph.edges();
+            if ( edges != null && !edges.isEmpty() )
             {
-                VertexPair<V> vertices = graph.getVertices( edge );
-
-                Map<String, Object> properties = new HashMap<String, Object>( edgeProperties.size() );
-
-                for ( Entry<String, Mapper<E, ?>> edgeProperty : edgeProperties.entrySet() )
+                for ( EndpointPair<N> edge : graph.edges() )
                 {
-                    properties.put( edgeProperty.getKey(),
-                                    edgeProperty.getValue().map( edge ) );
-                }
+                    Optional<E> edgeValue = graph.edgeValue( edge.nodeU(), edge.nodeV() );
 
-                edge( edge, vertices.getHead(), vertices.getTail(), properties );
+                    if ( edgeValue.isPresent() )
+                    {
+                        Map<String, Object> properties = new HashMap<String, Object>( edgeProperties.size() );
+
+                        for ( Entry<String, Function<E, ?>> edgeProperty : edgeProperties.entrySet() )
+                        {
+                            properties.put( edgeProperty.getKey(),
+                                            edgeProperty.getValue().apply( edgeValue.get() ) );
+                        }
+
+                        edge( edgeValue.get(), edge.nodeU(), edge.nodeV(), properties );
+                    }
+                }
             }
 
             endGraph();
@@ -148,7 +157,7 @@ abstract class AbstractExporter<V, E, T extends AbstractExporter<V, E, T>>
         }
     }
 
-    protected final Graph<V, E> getGraph()
+    protected final ValueGraph<N, E> getGraph()
     {
         return graph;
     }
@@ -158,12 +167,12 @@ abstract class AbstractExporter<V, E, T extends AbstractExporter<V, E, T>>
         return writer;
     }
     
-    protected void addVertexProperty( String propertyName, Mapper<V, ?> vertexProperty )
+    protected void addVertexProperty( String propertyName, Function<N, ?> vertexProperty )
     {
-        this.vertexProperties.put( propertyName, vertexProperty );
+        this.nodeProperties.put( propertyName, vertexProperty );
     }
-    
-    protected void addEdgeProperty( String propertyName, Mapper<E, ?> edgeProperty )
+
+    protected void addEdgeProperty( String propertyName, Function<E, ?> edgeProperty )
     {
         this.edgeProperties.put( propertyName, edgeProperty );
     }
@@ -183,16 +192,16 @@ abstract class AbstractExporter<V, E, T extends AbstractExporter<V, E, T>>
     protected abstract void comment( String text )
         throws Exception;
 
-    protected abstract void enlistVerticesProperty( String name, Class<?> type )
+    protected abstract void enlistNodesProperty( String name, Class<?> type )
         throws Exception;
 
     protected abstract void enlistEdgesProperty( String name, Class<?> type )
         throws Exception;
 
-    protected abstract void vertex( V vertex, Map<String, Object> properties )
+    protected abstract void vertex( N vertex, Map<String, Object> properties )
         throws Exception;
 
-    protected abstract void edge( E edge, V head, V tail, Map<String, Object> properties )
+    protected abstract void edge( E edge, N head, N tail, Map<String, Object> properties )
         throws Exception;
 
 }

@@ -1,7 +1,7 @@
 package org.nnsoft.trudeau.export;
 
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -19,11 +19,18 @@ package org.nnsoft.trudeau.export;
 /**
  * Allows users selecting the format of graph serialization.
  *
- * @param <V> the Graph vertices type.
- * @param <E> the Graph edges type.
+ * @param <N> the Graph nodes type.
  */
-public interface ExportSelector<V, E>
+public interface ExportSelector<N, E>
 {
+
+    /**
+     * Use the given name when exporting the {@link org.apache.commons.graph.Graph} to a resource.
+     *
+     * @param name the name to identify the {@link org.apache.commons.graph.Graph}
+     * @return the graph export format selector
+     */
+    ExportSelector<N, E> withName( String name );
 
     /**
      * Export Graphs in <a href="http://en.wikipedia.org/wiki/DOT_language">DOT language</a>.
@@ -31,7 +38,7 @@ public interface ExportSelector<V, E>
      * @return {@link DotExporter} instance
      * @throws GraphExportException
      */
-    DotExporter<V, E> usingDotNotation()
+    DotExporter<N, E> toDotNotation()
         throws GraphExportException;
 
     /**
@@ -40,7 +47,7 @@ public interface ExportSelector<V, E>
      * @return {@link GraphMLExporter} instance
      * @throws GraphExportException
      */
-    GraphMLExporter<V, E> usingGraphMLFormat()
+    GraphMLExporter<N, E> toGraphMLFormat()
         throws GraphExportException;
 
 }

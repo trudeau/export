@@ -1,7 +1,7 @@
 package org.nnsoft.trudeau.export;
 
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -20,19 +20,18 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
-import org.nnsoft.trudeau.api.DirectedGraph;
-import org.nnsoft.trudeau.api.Graph;
-import org.nnsoft.trudeau.api.Mapper;
+import com.google.common.graph.ValueGraph;
 
 /**
  * This class is NOT thread-safe!
  * 
- * @param <V>
+ * @param <N>
  * @param <E>
  */
-final class DotExporter<V, E>
-    extends AbstractExporter<V, E, DotExporter<V, E>>
+final class DotExporter<N, E>
+    extends AbstractExporter<N, E, DotExporter<N, E>>
 {
 
     private static final String GRAPH = "graph";
@@ -47,26 +46,28 @@ final class DotExporter<V, E>
 
     private static final String LABEL = "label";
 
-    private final Map<V, Integer> vertexIdentifiers;
+    private static final String COMMENT_HEADER = "# ";
+
+    private final Map<N, Integer> vertexIdentifiers;
 
     private PrintWriter printWriter;
 
     private String connector;
 
-    DotExporter( Graph<V, E> graph, String name )
+    DotExporter( ValueGraph<N, E> graph, String name )
     {
         super( graph, name );
         this.vertexIdentifiers = generateVertexIdentifiers( graph );
     }
 
-    private Map<V, Integer> generateVertexIdentifiers( Graph<V, E> graph )
+    private Map<N, Integer> generateVertexIdentifiers( ValueGraph<N, E> graph )
     {
-        Map<V, Integer> vertexIdentifiers = new HashMap<V, Integer>();
+        Map<N, Integer> vertexIdentifiers = new HashMap<N, Integer>();
         int count = 1;
 
-        for ( V vertex : graph.getVertices() )
+        for ( N node : graph.nodes() )
         {
-            vertexIdentifiers.put( vertex, count++ );
+            vertexIdentifiers.put( node, count++ );
         }
 
         return vertexIdentifiers;
@@ -92,7 +93,7 @@ final class DotExporter<V, E>
     {
         String graphDeclaration;
 
-        if ( getGraph() instanceof DirectedGraph )
+        if ( getGraph().isDirected() )
         {
             graphDeclaration = DIGRAPH;
             connector = DICONNECTOR;
@@ -117,11 +118,12 @@ final class DotExporter<V, E>
     protected void comment( String text )
         throws Exception
     {
+        printWriter.write( COMMENT_HEADER );
         printWriter.write( text );
     }
 
     @Override
-    protected void enlistVerticesProperty( String name, Class<?> type )
+    protected void enlistNodesProperty( String name, Class<?> type )
         throws Exception
     {
         // not needed in DOT
@@ -136,7 +138,7 @@ final class DotExporter<V, E>
     }
 
     @Override
-    protected void vertex( V vertex, Map<String, Object> properties )
+    protected void vertex( N vertex, Map<String, Object> properties )
         throws Exception
     {
         printWriter.format( "  %s", vertexIdentifiers.get( vertex ) );
@@ -145,7 +147,7 @@ final class DotExporter<V, E>
     }
 
     @Override
-    protected void edge( E edge, V head, V tail, Map<String, Object> properties )
+    protected void edge( E edge, N head, N tail, Map<String, Object> properties )
         throws Exception
     {
         printWriter.format( "  %s %s %s",
@@ -174,21 +176,22 @@ final class DotExporter<V, E>
         }
     }
 
-    public <N extends Number> DotExporter<V, E> withEdgeWeights( Mapper<E, N> edgeWeights )
+    public <V extends Number> DotExporter<N, E> withEdgeWeights( Function<E, V> edgeWeights )
     {
         super.addEdgeProperty( WEIGHT, edgeWeights );
         return this;
     }
 
-    public DotExporter<V, E> withEdgeLabels( Mapper<E, String> edgeLabels )
+    public DotExporter<N, E> withEdgeLabels( Function<E, String> edgeLabels )
     {
         super.addEdgeProperty( LABEL, edgeLabels );
         return this;
     }
 
-    public DotExporter<V, E> withVertexLabels( Mapper<V, String> vertexLabels )
+    public DotExporter<N, E> withVertexLabels( Function<N, String> vertexLabels )
     {
         super.addVertexProperty( LABEL, vertexLabels );
         return this;
     }
+
 }

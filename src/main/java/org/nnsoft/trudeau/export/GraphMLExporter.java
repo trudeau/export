@@ -1,7 +1,7 @@
 package org.nnsoft.trudeau.export;
 
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@ package org.nnsoft.trudeau.export;
  */
 
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import org.nnsoft.trudeau.api.Graph;
-import org.nnsoft.trudeau.api.Mapper;
 import org.xml.sax.helpers.AttributesImpl;
 
-final class GraphMLExporter<V, E>
-    extends AbstractExporter<V, E, GraphMLExporter<V, E>>
+import com.google.common.graph.ValueGraph;
+
+final class GraphMLExporter<N, E>
+    extends AbstractExporter<N, E, GraphMLExporter<N, E>>
 {
 
     private static final SAXTransformerFactory SAX_TRANSFORMER_FACTORY = (SAXTransformerFactory) TransformerFactory.newInstance();
@@ -85,7 +86,7 @@ final class GraphMLExporter<V, E>
 
     private TransformerHandler transformerHandler;
 
-    GraphMLExporter( Graph<V, E> graph, String name )
+    GraphMLExporter( ValueGraph<N, E> graph, String name )
     {
         super( graph, name );
     }
@@ -136,7 +137,7 @@ final class GraphMLExporter<V, E>
     }
 
     @Override
-    protected void enlistVerticesProperty( String name, Class<?> type )
+    protected void enlistNodesProperty( String name, Class<?> type )
         throws Exception
     {
         enlistProperty( name, type, NODE );
@@ -162,11 +163,11 @@ final class GraphMLExporter<V, E>
     }
 
     @Override
-    protected void vertex( V vertex, Map<String, Object> properties )
+    protected void vertex( N node, Map<String, Object> properties )
         throws Exception
     {
         AttributesImpl atts = new AttributesImpl();
-        atts.addAttribute( GRAPHML_XMLNS, ID, ID, CDATA_TYPE, String.valueOf( vertex.hashCode() ) );
+        atts.addAttribute( GRAPHML_XMLNS, ID, ID, CDATA_TYPE, String.valueOf( node.hashCode() ) );
         transformerHandler.startElement( GRAPHML_XMLNS, NODE, NODE, atts );
 
         // TODO print properties
@@ -175,13 +176,18 @@ final class GraphMLExporter<V, E>
     }
 
     @Override
-    protected void edge( E edge, V head, V tail, Map<String, Object> properties )
+    protected void edge( E edge, N head, N tail, Map<String, Object> properties )
         throws Exception
     {
         AttributesImpl atts = new AttributesImpl();
-        atts.addAttribute( GRAPHML_XMLNS, ID, ID, CDATA_TYPE, String.valueOf( edge.hashCode() ) );
-        atts.addAttribute( GRAPHML_XMLNS, SOURCE, SOURCE, CDATA_TYPE, String.valueOf( getGraph().getVertices( edge ).getHead().hashCode() ) );
-        atts.addAttribute( GRAPHML_XMLNS, TARGET, TARGET, CDATA_TYPE, String.valueOf( getGraph().getVertices( edge ).getTail().hashCode() ) );
+
+        if ( edge != null )
+        {
+            atts.addAttribute( GRAPHML_XMLNS, ID, ID, CDATA_TYPE, String.valueOf( edge.hashCode() ) );
+        }
+
+        atts.addAttribute( GRAPHML_XMLNS, SOURCE, SOURCE, CDATA_TYPE, String.valueOf( head.hashCode() ) );
+        atts.addAttribute( GRAPHML_XMLNS, TARGET, TARGET, CDATA_TYPE, String.valueOf( tail.hashCode() ) );
         transformerHandler.startElement( GRAPHML_XMLNS, EDGE, EDGE, atts );
 
         // TODO print properties
@@ -214,25 +220,25 @@ final class GraphMLExporter<V, E>
         return STRING;
     }
 
-    public <N extends Number> GraphMLExporter<V, E> withEdgeWeights( Mapper<E, N> edgeWeights )
+    public <V extends Number> GraphMLExporter<N, E> withEdgeWeights( Function<E, V> edgeWeights )
     {
         super.addEdgeProperty( WEIGHT, edgeWeights );
         return this;
     }
 
-    public <N extends Number> GraphMLExporter<V, E> withVertexWeights( Mapper<V, N> vertexWeights )
+    public <V extends Number> GraphMLExporter<N, E> withVertexWeights( Function<N, V> vertexWeights )
     {
         super.addVertexProperty( WEIGHT, vertexWeights );
         return this;
     }
 
-    public GraphMLExporter<V, E> withEdgeLabels( Mapper<E, String> edgeLabels )
+    public GraphMLExporter<N, E> withEdgeLabels( Function<E, String> edgeLabels )
     {
         super.addEdgeProperty( LABEL, edgeLabels );
         return this;
     }
 
-    public GraphMLExporter<V, E> withVertexLabels( Mapper<V, String> vertexLabels )
+    public GraphMLExporter<N, E> withVertexLabels( Function<N, String> vertexLabels )
     {
         super.addVertexProperty( LABEL, vertexLabels );
         return this;

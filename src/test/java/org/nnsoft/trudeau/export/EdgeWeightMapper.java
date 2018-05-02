@@ -1,7 +1,9 @@
 package org.nnsoft.trudeau.export;
 
+import java.util.function.Function;
+
 /*
- *   Copyright 2013 The Trudeau Project
+ *   Copyright 2013 - 2018 The Trudeau Project
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
@@ -16,18 +18,14 @@ package org.nnsoft.trudeau.export;
  *   limitations under the License.
  */
 
-import org.nnsoft.trudeau.api.Mapper;
-import org.nnsoft.trudeau.inmemory.labeled.BaseLabeledWeightedEdge;
-
 public final class EdgeWeightMapper
-    implements Mapper<BaseLabeledWeightedEdge<Double>, Double>
+    implements Function<BaseLabeledWeightedEdge<Double>, Double>
 {
 
-    private static final long serialVersionUID = 20120728L;
-
-    public Double map( BaseLabeledWeightedEdge<Double> input )
+    @Override
+    public Double apply( BaseLabeledWeightedEdge<Double> t )
     {
-        return input.getWeight();
+        return t.getWeight();
     }
 
 }
